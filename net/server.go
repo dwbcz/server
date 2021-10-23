@@ -21,6 +21,14 @@ func (s *Server) Serve()  {
 	s.Stop()
 }
 
+func CallBackToClient(c *net.TCPConn,buf []byte,cnt int) error{
+	_, err := c.Write(buf[:cnt])
+	if err!=nil{
+		panic(new(error))
+	}
+	return nil
+}
+
 func (s *Server) Start()  {
 	fmt.Printf("server starting ...， IP:%s, Port: %d",s.IP,s.Port)
 	go func() {
@@ -37,6 +45,7 @@ func (s *Server) Start()  {
 		fmt.Println("start server success, name = %s .....",s.Name)
 
 		//建立链接
+		var cid uint32 = 0
 		for {
 			cli, err := listener.AcceptTCP()
 			if err != nil {
@@ -44,18 +53,9 @@ func (s *Server) Start()  {
 				continue
 			}
 			go func() {
-				for {
-					buf := make([]byte, 1024)
-					if _, err := cli.Read(buf); err != nil {
-						fmt.Println("read message error")
-					} else {
-						wlen, err := cli.Write(buf)
-						if err != nil {
-							fmt.Println("write failed .....")
-						}
-						fmt.Println("mesaage : %s , len = %d", buf, wlen)
-					}
-				}
+				conn := NewConnection(cli, cid, CallBackToClient)
+				cid++
+				conn.Start()
 			}()
 		}
 	}()
